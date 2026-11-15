@@ -16,7 +16,7 @@ export function RoleRouteGuard({ allowedRoles, children }: RoleRouteGuardProps) 
   }
 
   if (!allowedRoles.includes(user.role)) {
-    return <main className="access-denied">{id.noAccess}</main>
+    return <section className="access-denied" role="status">{id.noAccess}</section>
   }
 
   return children

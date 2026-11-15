@@ -15,7 +15,9 @@ const referenceSessionUser: SessionUser = {
 const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(referenceSessionUser)
+  const [user, setUser] = useState<SessionUser | null>(() =>
+    import.meta.env.DEV ? referenceSessionUser : null,
+  )
   const signOut = useCallback(() => setUser(null), [])
   const value = useMemo(() => ({ user, signOut }), [user, signOut])
 
