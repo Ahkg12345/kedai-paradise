@@ -61,7 +61,7 @@ for (const admin of admins) {
       username: admin.username,
       name: admin.name,
       role: 'admin',
-      provisioned_by: 'kedai-paradise-admin',
+      provisioned_by: 'admin-seed',
     },
   })
 

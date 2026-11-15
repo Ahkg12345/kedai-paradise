@@ -8,7 +8,10 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
-    allowedHosts: ['kedai-paradise-setup-phase-1.v0.build'],
+    allowedHosts: [
+      'kedai-paradise-setup-phase-1.v0.build',
+      'sb-3vcygp6zyfw5.vercel.run',
+    ],
   },
   resolve: {
     alias: {
