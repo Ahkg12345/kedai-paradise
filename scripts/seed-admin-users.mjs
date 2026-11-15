@@ -3,9 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const password = process.env.ADMIN_PASSWORD
+const adminUsername = process.env.ADMIN_USERNAME?.trim()
+const adminFullName = process.env.ADMIN_FULL_NAME?.trim()
 
 if (!supabaseUrl || !serviceRoleKey || !password) {
   throw new Error('Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and ADMIN_PASSWORD before provisioning admins.')
+}
+
+if (Boolean(adminUsername) !== Boolean(adminFullName)) {
+  throw new Error('Set both ADMIN_USERNAME and ADMIN_FULL_NAME when provisioning a single admin.')
 }
 
 if (password.length < 8) {
@@ -16,10 +22,23 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-const admins = [
+const initialAdmins = [
   { username: 'fajar', name: 'Bapak Fajar' },
   { username: 'fitri', name: 'Ibu Fitri' },
 ]
+
+const admins = adminUsername
+  ? [
+      {
+        ...initialAdmins.find(({ username }) => username === adminUsername),
+        name: adminFullName,
+      },
+    ]
+  : initialAdmins
+
+if (adminUsername && !initialAdmins.some(({ username }) => username === adminUsername)) {
+  throw new Error(`ADMIN_USERNAME must be one of: ${initialAdmins.map(({ username }) => username).join(', ')}.`)
+}
 
 for (const admin of admins) {
   const { data: existing, error: lookupError } = await supabase

@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
+    allowedHosts: ['kedai-paradise-setup-phase-1.v0.build'],
   },
   resolve: {
     alias: {
