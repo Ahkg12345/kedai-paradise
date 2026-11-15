@@ -3,10 +3,15 @@ import { Header } from '@/components/layout/Header'
 import { RoleRouteGuard } from '@/app/role-route-guard'
 import { useSession } from '@/app/session-context'
 import { routeList } from '@/app/route-list'
+import { LoginPage } from '@/features/auth/LoginPage'
 import { id } from '@/lib/i18n/id'
 
 function ProtectedLayout() {
-  const { user } = useSession()
+  const { user, isLoading } = useSession()
+
+  if (isLoading) {
+    return <main className="auth-loading" aria-busy="true">{id.login.loading}</main>
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />
@@ -20,6 +25,11 @@ function ProtectedLayout() {
       </main>
     </>
   )
+}
+
+function LandingRoute() {
+  const { user } = useSession()
+  return <Navigate to={user?.role === 'admin' ? '/dasbor' : '/kasir'} replace />
 }
 
 function EmptyRoute() {
@@ -40,15 +50,15 @@ const protectedRoutes = routeList
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: <main className="login-route" aria-label={id.routes.login} />,
+    element: <LoginPage />,
   },
   {
     path: '/',
     element: <ProtectedLayout />,
     children: [
-      { index: true, element: <Navigate to="/kasir" replace /> },
+      { index: true, element: <LandingRoute /> },
       ...protectedRoutes,
-      { path: '*', element: <Navigate to="/dasbor" replace /> },
+      { path: '*', element: <LandingRoute /> },
     ],
   },
 ])

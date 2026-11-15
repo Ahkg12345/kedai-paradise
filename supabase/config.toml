@@ -1,0 +1,5 @@
+[auth]
+enable_signup = false
+
+[functions.auth-login]
+verify_jwt = false

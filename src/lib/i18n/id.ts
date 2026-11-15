@@ -35,4 +35,20 @@ export const id = {
   errors: {
     generic: 'Terjadi kesalahan. Silakan coba lagi.',
   },
+  login: {
+    subtitle: 'Sistem Kasir & Rekap Keuangan',
+    username: 'Username',
+    usernamePlaceholder: 'Masukkan username',
+    password: 'Password',
+    passwordPlaceholder: 'Masukkan password',
+    help: 'Bantuan Kasir?',
+    helpText: 'Lupa username atau password? Hubungi admin untuk mereset password.',
+    showPassword: 'Tampilkan password',
+    hidePassword: 'Sembunyikan password',
+    submit: 'MASUK KE SISTEM',
+    submitting: 'MEMERIKSA AKUN…',
+    loading: 'Memuat sesi…',
+    retryCountdown: 'Waktu tersisa:',
+    securityNote: 'Koneksi terenkripsi HTTPS (TLS 1.2+). Sesi otomatis ditutup setelah 30 menit.',
+  },
 } as const

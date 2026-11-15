@@ -36,8 +36,8 @@ export function Header({ user, queueCount = 0 }: HeaderProps) {
     }
   }, [])
 
-  const handleLogout = () => {
-    signOut()
+  const handleLogout = async () => {
+    await signOut()
     setIsMobileNavigationOpen(false)
     navigate('/login')
   }
