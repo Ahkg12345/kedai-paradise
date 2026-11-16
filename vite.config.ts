@@ -11,7 +11,12 @@ export default defineConfig({
     allowedHosts: [
       'kedai-paradise-setup-phase-1.v0.build',
       'sb-3vcygp6zyfw5.vercel.run',
+      'sb-1dwvg4jcvpab.vercel.run',
+      '.vercel.run',
     ],
+  },
+  preview: {
+    allowedHosts: ['sb-1dwvg4jcvpab.vercel.run', '.vercel.run'],
   },
   resolve: {
     alias: {
