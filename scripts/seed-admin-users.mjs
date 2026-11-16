@@ -57,6 +57,15 @@ for (const admin of admins) {
     email: `${admin.username}@kedaiparadise.local`,
     password,
     email_confirm: true,
+    user_metadata: {
+      provisioned_by: 'admin-seed',
+    },
+  })
+
+  if (createError) throw createError
+  if (!authData.user) throw new Error(`Supabase did not return an auth user for ${admin.username}.`)
+
+  const { error: metadataError } = await supabase.auth.admin.updateUserById(authData.user.id, {
     app_metadata: {
       username: admin.username,
       name: admin.name,
@@ -65,8 +74,10 @@ for (const admin of admins) {
     },
   })
 
-  if (createError) throw createError
-  if (!authData.user) throw new Error(`Supabase did not return an auth user for ${admin.username}.`)
+  if (metadataError) {
+    await supabase.auth.admin.deleteUser(authData.user.id)
+    throw metadataError
+  }
 
   const { error: profileError } = await supabase.from('users').insert({
     auth_id: authData.user.id,
