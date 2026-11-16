@@ -9,6 +9,8 @@ type PosData = {
   groups: ModifierGroup[]
   modifiers: ModifierItem[]
   tableCount: number
+  qrisOwnerName: string | null
+  qrisImageUrl: string | null
 }
 
 type RawMenu = Omit<MenuItem, 'photoUrl'>
@@ -32,7 +34,7 @@ async function fetchPosData(role: UserRole): Promise<PosData> {
       .from(modifierView)
       .select('modifier_id, group_id, name, extra_price, available, hint')
       .order('modifier_id', { ascending: true }),
-    supabase.from('cashier_settings').select('table_count').limit(1).maybeSingle(),
+    supabase.from('cashier_settings').select('table_count, qris_owner_name, qris_image').limit(1).maybeSingle(),
   ])
 
   if (menuResult.error || groupResult.error || modifierResult.error || settingsResult.error) {
@@ -42,7 +44,11 @@ async function fetchPosData(role: UserRole): Promise<PosData> {
   const rawMenu = (menuResult.data ?? []) as unknown as RawMenu[]
   const groups = (groupResult.data ?? []) as unknown as ModifierGroup[]
   const modifiers = (modifierResult.data ?? []) as unknown as ModifierItem[]
-  const settings = settingsResult.data as unknown as { table_count: number } | null
+  const settings = settingsResult.data as unknown as {
+    table_count: number
+    qris_owner_name: string | null
+    qris_image: string | null
+  } | null
 
   const menu = await Promise.all(rawMenu.map(async (item) => {
     if (!item.photo) return { ...item, photoUrl: null }
@@ -51,11 +57,19 @@ async function fetchPosData(role: UserRole): Promise<PosData> {
     return { ...item, photoUrl: error ? null : data.signedUrl }
   }))
 
+  let qrisImageUrl: string | null = null
+  if (settings?.qris_image) {
+    const { data, error } = await supabase.storage.from('qris').createSignedUrl(settings.qris_image, 3_600)
+    if (!error) qrisImageUrl = data.signedUrl
+  }
+
   return {
     menu,
     groups,
     modifiers,
     tableCount: Math.max(1, Number(settings?.table_count ?? 1)),
+    qrisOwnerName: settings?.qris_owner_name ?? null,
+    qrisImageUrl,
   }
 }
 

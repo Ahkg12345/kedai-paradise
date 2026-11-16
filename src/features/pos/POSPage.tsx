@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import packageMetadata from '../../../package.json'
 import { useSession } from '@/app/session-context'
 import { PosCatalog } from '@/features/pos/PosCatalog'
+import { PosCheckoutDialog } from '@/features/pos/PosCheckoutDialog'
 import { PosOptionsDialog } from '@/features/pos/PosOptionsDialog'
 import { PosOrderPanel } from '@/features/pos/PosOrderPanel'
+import { checkoutMetaQueryKey, useCheckoutMeta } from '@/features/pos/use-checkout-meta'
 import { usePosData } from '@/features/pos/use-pos-data'
 import { id } from '@/lib/i18n/id'
 import { supabase } from '@/lib/supabase/client'
@@ -19,8 +22,10 @@ function sameModifiers(first: ModifierItem[], second: ModifierItem[]): boolean {
 
 export function POSPage() {
   const { user } = useSession()
+  const navigate = useNavigate()
   const role = user?.role ?? 'cashier'
   const queryClient = useQueryClient()
+  const checkoutMeta = useCheckoutMeta()
   const { data, isPending, isError, refetch, isFetching } = usePosData(role)
   const [category, setCategory] = useState('all')
   const [search, setSearch] = useState('')
@@ -32,6 +37,7 @@ export function POSPage() {
   const [serviceMode, setServiceMode] = useState<ServiceMode>('dine-in')
   const [tableNo, setTableNo] = useState<number | 'TA'>(1)
   const [announcement, setAnnouncement] = useState('')
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   const availabilityMutation = useMutation({
     mutationFn: async ({ menuId, available }: { menuId: number; available: boolean }) => {
@@ -128,6 +134,8 @@ export function POSPage() {
   const modifiersForMenu = groupsForMenu.length > 0
     ? data?.modifiers.filter((item) => groupsForMenu.some((group) => group.group_id === item.group_id)) ?? []
     : []
+  const cashAmount = Number.parseInt(cashReceived || '0', 10) || 0
+  const canComplete = cart.length > 0 && (paymentMethod === 'qris' || cashAmount >= total)
 
   return (
     <div className="pos-page">
@@ -156,6 +164,8 @@ export function POSPage() {
             total={total}
             quantityCount={quantityCount}
             tableCount={data?.tableCount ?? 1}
+            canComplete={canComplete}
+            onComplete={() => setCheckoutOpen(true)}
             serviceMode={serviceMode}
             tableNo={tableNo}
             paymentMethod={paymentMethod}
@@ -195,6 +205,31 @@ export function POSPage() {
           initialLine={editingLine}
           onClose={closeOptions}
           onSave={handleSaveOptions}
+        />
+      )}
+
+      {checkoutOpen && (
+        <PosCheckoutDialog
+          lines={cart}
+          total={total}
+          tableNo={tableNo}
+          paymentMethod={paymentMethod}
+          cashReceived={cashAmount}
+          checkoutMeta={checkoutMeta.data ?? null}
+          metaLoading={checkoutMeta.isPending}
+          metaError={checkoutMeta.isError && !checkoutMeta.data}
+          onRetryMeta={() => void checkoutMeta.refetch()}
+          qrisOwnerName={data?.qrisOwnerName ?? null}
+          qrisImageUrl={data?.qrisImageUrl ?? null}
+          onClose={() => setCheckoutOpen(false)}
+          onComplete={(transactionId) => {
+            setCheckoutOpen(false)
+            setCart([])
+            setCashReceived('')
+            void queryClient.invalidateQueries({ queryKey: checkoutMetaQueryKey })
+            void queryClient.invalidateQueries({ queryKey: ['pos-data', role] })
+            navigate(`/struk/${transactionId}`, { state: { fromCheckout: true } })
+          }}
         />
       )}
     </div>

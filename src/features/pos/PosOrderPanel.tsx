@@ -13,6 +13,8 @@ type PosOrderPanelProps = {
   tableNo: number | 'TA'
   paymentMethod: PaymentMethod
   cashReceived: string
+  canComplete: boolean
+  onComplete: () => void
   onServiceModeChange: (mode: ServiceMode) => void
   onTableChange: (tableNo: number) => void
   onPaymentMethodChange: (method: PaymentMethod) => void
@@ -33,6 +35,8 @@ export function PosOrderPanel({
   tableNo,
   paymentMethod,
   cashReceived,
+  canComplete,
+  onComplete,
   onServiceModeChange,
   onTableChange,
   onPaymentMethodChange,
@@ -173,7 +177,7 @@ export function PosOrderPanel({
         )}
       </section>
 
-      <button className="pos-complete-button" type="button" disabled aria-disabled="true">
+      <button className="pos-complete-button" type="button" disabled={!canComplete} onClick={onComplete}>
         <Banknote size={20} aria-hidden="true" />
         <span>{id.pos.completeTransaction}</span>
       </button>
