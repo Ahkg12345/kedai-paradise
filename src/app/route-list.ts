@@ -10,12 +10,11 @@ export type AppRoute = {
 
 const bothRoles = ['admin', 'cashier'] as const
 const adminOnly = ['admin'] as const
-const cashierOnly = ['cashier'] as const
 
 export const routeList: readonly AppRoute[] = [
   { path: '/login', label: id.routes.login, roles: [] },
   { path: '/dasbor', label: id.routes.dashboard, roles: bothRoles, navigation: true },
-  { path: '/kasir', label: id.routes.cashier, roles: cashierOnly, navigation: true },
+  { path: '/kasir', label: id.routes.cashier, roles: bothRoles, navigation: true },
   { path: '/antrian', label: id.routes.queue, roles: bothRoles, navigation: true },
   { path: '/riwayat', label: id.routes.history, roles: bothRoles, navigation: true },
   { path: '/tutup-kasir', label: id.routes.cashClosing, roles: bothRoles, navigation: true },

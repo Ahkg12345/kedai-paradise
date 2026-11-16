@@ -51,7 +51,7 @@ export function Header({ user, queueCount = 0 }: HeaderProps) {
       onClick={mobile ? () => setIsMobileNavigationOpen(false) : undefined}
     >
       <span>{route.label}</span>
-      {route.path === '/antrian' && (
+      {route.path === '/antrian' && queueCount > 0 && (
         <span className="queue-count" aria-label={`${id.queueCount}: ${queueCount}`}>
           {queueCount}
         </span>

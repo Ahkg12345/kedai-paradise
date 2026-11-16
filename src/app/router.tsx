@@ -4,6 +4,7 @@ import { RoleRouteGuard } from '@/app/role-route-guard'
 import { useSession } from '@/app/session-context'
 import { routeList } from '@/app/route-list'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { POSPage } from '@/features/pos/POSPage'
 import { id } from '@/lib/i18n/id'
 
 function ProtectedLayout() {
@@ -42,7 +43,7 @@ const protectedRoutes = routeList
     path: route.path.slice(1),
     element: (
       <RoleRouteGuard allowedRoles={route.roles}>
-        <EmptyRoute />
+        {route.path === '/kasir' ? <POSPage /> : <EmptyRoute />}
       </RoleRouteGuard>
     ),
   }))
