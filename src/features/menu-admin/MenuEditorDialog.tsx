@@ -3,6 +3,7 @@ import { ImagePlus, Pencil, Trash2, X } from 'lucide-react'
 import { formatSignedRupiah } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import type { MenuRecord, MenuSavePayload } from './menu-admin-data'
+import { MenuConfirmDialog } from './MenuConfirmDialog'
 import { MenuDialog } from './MenuDialog'
 
 function formatFileSize(bytes: number) {
@@ -53,7 +54,8 @@ export function MenuEditorDialog({
   const [available, setAvailable] = useState(menu?.available ?? true)
   const [status, setStatus] = useState(menu?.status ?? true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [showDeactivateConfirmation, setShowDeactivateConfirmation] = useState(false)
   const [error, setError] = useState('')
   const [dimensions, setDimensions] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -128,26 +130,13 @@ export function MenuEditorDialog({
     }
   }
 
-  const handleDelete = async () => {
-    if (!menu || !canDelete) return
-    setError('')
-    setIsDeleting(true)
-    try {
-      await onDelete(menu)
-      onClose()
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : id.errors.generic)
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
   const photoName = file?.name ?? photo?.split('/').pop() ?? ''
   const photoStatus = file ? id.menuAdmin.photoReady : photo ? id.menuAdmin.photoSaved : id.menuAdmin.photoMissing
-  const canSubmit = !isSaving && !isDeleting
+  const canSubmit = !isSaving
 
   return (
-    <MenuDialog labelledBy={titleId} className="menu-editor-dialog" onClose={onClose}>
+    <>
+      <MenuDialog labelledBy={titleId} className="menu-editor-dialog" onClose={onClose}>
       <form className="menu-editor-form" onSubmit={(event) => void handleSave(event)}>
         <header className="menu-dialog-header">
           <span className="menu-dialog-icon"><Pencil aria-hidden="true" /></span>
@@ -214,7 +203,18 @@ export function MenuEditorDialog({
 
           <div className="menu-editor-toggles">
             <MenuToggle checked={available} label={id.menuAdmin.availableToggle} caption={id.menuAdmin.availableCaption} onChange={setAvailable} />
-            <MenuToggle checked={status} label={id.menuAdmin.activeToggle} caption={id.menuAdmin.activeCaption} onChange={setStatus} />
+            <MenuToggle
+              checked={status}
+              label={id.menuAdmin.activeToggle}
+              caption={id.menuAdmin.activeCaption}
+              onChange={(nextStatus) => {
+                if (menu?.status && !nextStatus) {
+                  setShowDeactivateConfirmation(true)
+                } else {
+                  setStatus(nextStatus)
+                }
+              }}
+            />
           </div>
 
           {error && <p className="menu-form-error" role="alert">{error}</p>}
@@ -222,10 +222,30 @@ export function MenuEditorDialog({
 
         <footer className="menu-dialog-footer">
           <button type="button" className="menu-secondary-button" onClick={onClose} disabled={!canSubmit}>{id.menuAdmin.cancel}</button>
-          {menu && canDelete && <button type="button" className="menu-delete-button" onClick={() => void handleDelete()} disabled={!canSubmit}><Trash2 aria-hidden="true" />{id.menuAdmin.deleteMenu}</button>}
+          {menu && canDelete && <button type="button" className="menu-delete-button" onClick={() => setShowDeleteConfirmation(true)} disabled={!canSubmit}><Trash2 aria-hidden="true" />{id.menuAdmin.deleteMenu}</button>}
           <button type="submit" className="menu-primary-button" disabled={!canSubmit}>{isSaving ? id.menuAdmin.saving : id.menuAdmin.save}</button>
         </footer>
       </form>
-    </MenuDialog>
+      </MenuDialog>
+      {showDeactivateConfirmation && menu && (
+        <MenuConfirmDialog
+          title={id.menuAdmin.confirmDeactivateTitle}
+          description={id.menuAdmin.confirmDeactivateMessage.replace('{name}', menu.name)}
+          confirmLabel={id.menuAdmin.confirmDeactivateAction}
+          onClose={() => setShowDeactivateConfirmation(false)}
+          onConfirm={async () => setStatus(false)}
+        />
+      )}
+      {showDeleteConfirmation && menu && (
+        <MenuConfirmDialog
+          title={id.menuAdmin.confirmDeleteMenuTitle}
+          description={id.menuAdmin.confirmDeleteMenuMessage.replace('{name}', menu.name)}
+          confirmLabel={id.menuAdmin.confirmDeleteAction}
+          onClose={() => setShowDeleteConfirmation(false)}
+          onConfirm={() => onDelete(menu)}
+          onSuccess={onClose}
+        />
+      )}
+    </>
   )
 }

@@ -3,11 +3,15 @@ import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
 export function MenuDialog({
   labelledBy,
   className,
+  role = 'dialog',
+  describedBy,
   onClose,
   children,
 }: {
   labelledBy: string
   className: string
+  role?: 'dialog' | 'alertdialog'
+  describedBy?: string
   onClose: () => void
   children: ReactNode
 }) {
@@ -31,7 +35,9 @@ export function MenuDialog({
     <dialog
       ref={dialogRef}
       className={`menu-dialog ${className}`}
+      role={role}
       aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
       onCancel={(event) => {
         event.preventDefault()
         onClose()

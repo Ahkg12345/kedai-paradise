@@ -3,6 +3,7 @@ import { Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { formatRupiah } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import type { MenuModifierGroup, MenuModifierPayload } from './menu-admin-data'
+import { MenuConfirmDialog } from './MenuConfirmDialog'
 import { MenuDialog } from './MenuDialog'
 
 type ModifierItemDraft = {
@@ -59,6 +60,7 @@ export function MenuModifiersDialog({
   onSave: (groups: MenuModifierPayload[]) => Promise<void>
 }) {
   const [groups, setGroups] = useState(() => makeDrafts(initialGroups))
+  const [pendingGroup, setPendingGroup] = useState<{ index: number; name: string } | null>(null)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const titleId = 'menu-modifiers-title'
@@ -153,7 +155,8 @@ export function MenuModifiersDialog({
   }
 
   return (
-    <MenuDialog labelledBy={titleId} className="menu-modifiers-dialog" onClose={onClose}>
+    <>
+      <MenuDialog labelledBy={titleId} className="menu-modifiers-dialog" onClose={onClose}>
       <form className="menu-modifiers-form" onSubmit={(event) => void handleSave(event)}>
         <header className="menu-dialog-header menu-modifiers-header">
           <span className="menu-dialog-icon"><SlidersHorizontal aria-hidden="true" /></span>
@@ -180,7 +183,7 @@ export function MenuModifiersDialog({
                   <input id={`menu-group-name-${groupIndex}`} className="menu-group-name-input" value={group.name} onChange={(event) => updateGroup(groupIndex, { name: event.target.value })} maxLength={50} placeholder={id.menuAdmin.groupNamePlaceholder} required />
                   <small>{group.is_required ? id.menuAdmin.groupSubtitleRequired : id.menuAdmin.groupSubtitleOptional}</small>
                 </div>
-                <button type="button" className="menu-remove-group" onClick={() => setGroups((current) => current.filter((_, index) => index !== groupIndex))}><Trash2 aria-hidden="true" />{id.menuAdmin.deleteGroup}</button>
+                <button type="button" className="menu-remove-group" onClick={() => setPendingGroup({ index: groupIndex, name: group.name || id.menuAdmin.groupName })}><Trash2 aria-hidden="true" />{id.menuAdmin.deleteGroup}</button>
               </header>
 
               <div className="menu-modifier-group-controls">
@@ -242,6 +245,16 @@ export function MenuModifiersDialog({
           <button type="submit" className="menu-primary-button" disabled={isSaving}>{isSaving ? id.menuAdmin.saving : id.menuAdmin.saveModifiers}</button>
         </footer>
       </form>
-    </MenuDialog>
+      </MenuDialog>
+      {pendingGroup && (
+        <MenuConfirmDialog
+          title={id.menuAdmin.confirmDeleteGroupTitle}
+          description={id.menuAdmin.confirmDeleteGroupMessage.replace('{name}', pendingGroup.name)}
+          confirmLabel={id.menuAdmin.confirmDeleteAction}
+          onClose={() => setPendingGroup(null)}
+          onConfirm={async () => setGroups((current) => current.filter((_, index) => index !== pendingGroup.index))}
+        />
+      )}
+    </>
   )
 }

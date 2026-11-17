@@ -6,6 +6,7 @@ import { apiError } from '@/lib/api-error'
 import { id } from '@/lib/i18n/id'
 import { supabase } from '@/lib/supabase/client'
 import { MenuAdminTable } from './MenuAdminTable'
+import { MenuConfirmDialog } from './MenuConfirmDialog'
 import { MenuEditorDialog } from './MenuEditorDialog'
 import { MenuModifiersDialog } from './MenuModifiersDialog'
 import {
@@ -25,6 +26,12 @@ const menuPageQueryKey = ['menu-admin-page'] as const
 const menuSummaryQueryKey = ['menu-admin-summary'] as const
 
 type Notice = { message: string; kind: 'success' | 'error' } | null
+type MenuConfirmation = {
+  title: string
+  description: string
+  confirmLabel: string
+  onConfirm: () => Promise<void>
+} | null
 
 function KpiCard({
   label,
@@ -63,6 +70,7 @@ export function MenuAdminPage() {
   const [modifierMenu, setModifierMenu] = useState<MenuRecord | null>(null)
   const [workingMenuId, setWorkingMenuId] = useState<number | null>(null)
   const [notice, setNotice] = useState<Notice>(null)
+  const [confirmation, setConfirmation] = useState<MenuConfirmation>(null)
 
   const summaryQuery = useQuery({
     queryKey: menuSummaryQueryKey,
@@ -130,11 +138,27 @@ export function MenuAdminPage() {
         message: field === 'available' ? id.menuAdmin.availabilitySuccess : id.menuAdmin.statusSuccess,
         kind: 'success',
       })
-    } catch (error) {
-      setNotice({ message: apiError(error), kind: 'error' })
     } finally {
       setWorkingMenuId(null)
     }
+  }
+
+  const updateMenuFieldImmediately = (menu: MenuRecord, field: 'available' | 'status') => {
+    void updateMenuField(menu, field).catch((error) => setNotice({ message: apiError(error), kind: 'error' }))
+  }
+
+  const requestStatusChange = (menu: MenuRecord) => {
+    if (!menu.status) {
+      updateMenuFieldImmediately(menu, 'status')
+      return
+    }
+
+    setConfirmation({
+      title: id.menuAdmin.confirmDeactivateTitle,
+      description: id.menuAdmin.confirmDeactivateMessage.replace('{name}', menu.name),
+      confirmLabel: id.menuAdmin.confirmDeactivateAction,
+      onConfirm: () => updateMenuField(menu, 'status'),
+    })
   }
 
   const pageError = menuQuery.isError ? apiError(menuQuery.error, id.menuAdmin.loadingError) : ''
@@ -195,8 +219,8 @@ export function MenuAdminPage() {
         workingMenuId={workingMenuId}
         onEdit={setEditorMenu}
         onEditModifiers={setModifierMenu}
-        onToggleAvailability={(menu) => void updateMenuField(menu, 'available')}
-        onToggleStatus={(menu) => void updateMenuField(menu, 'status')}
+        onToggleAvailability={(menu) => updateMenuFieldImmediately(menu, 'available')}
+        onToggleStatus={requestStatusChange}
         onPageChange={setPage}
       />
 
@@ -220,6 +244,15 @@ export function MenuAdminPage() {
           groups={modifierMenu.groups}
           onClose={() => setModifierMenu(null)}
           onSave={(groups) => saveModifiers(modifierMenu, groups)}
+        />
+      )}
+      {confirmation && (
+        <MenuConfirmDialog
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
+          onClose={() => setConfirmation(null)}
+          onConfirm={confirmation.onConfirm}
         />
       )}
     </div>

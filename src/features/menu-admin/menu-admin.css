@@ -789,6 +789,96 @@
   backdrop-filter: blur(3px);
 }
 
+.menu-confirm-dialog {
+  width: min(100% - 36px, 520px);
+}
+
+.menu-confirm-panel {
+  padding: 28px;
+}
+
+.menu-confirm-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.menu-confirm-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.menu-confirm-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.menu-confirm-heading h2 {
+  margin: 1px 0 7px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.menu-confirm-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.menu-confirm-error {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--error);
+  background: var(--error-bg);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.menu-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.menu-confirm-cancel,
+.menu-confirm-submit {
+  min-height: 46px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.menu-confirm-cancel {
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}
+
+.menu-confirm-submit {
+  color: #fff;
+  background: var(--error);
+  box-shadow: 0 3px 9px rgb(186 26 26 / 16%);
+}
+
+.menu-confirm-cancel:disabled,
+.menu-confirm-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .menu-editor-dialog {
   width: min(100% - 36px, 880px);
 }
@@ -1915,5 +2005,27 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 5px;
+  }
+}
+
+@media (max-width: 520px) {
+  .menu-confirm-panel {
+    padding: 20px;
+  }
+
+  .menu-confirm-heading {
+    gap: 11px;
+  }
+
+  .menu-confirm-heading h2 {
+    font-size: 19px;
+  }
+
+  .menu-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .menu-confirm-actions button {
+    width: 100%;
   }
 }
