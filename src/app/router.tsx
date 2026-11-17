@@ -11,6 +11,7 @@ import { QueuePage } from '@/features/queue/QueuePage'
 import { HistoryPage } from '@/features/history/HistoryPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { CashClosingPage } from '@/features/cash-closing/CashClosingPage'
+import { MenuAdminPage } from '@/features/menu-admin/MenuAdminPage'
 import { ClosingPrintPage } from '@/features/cash-closing/ClosingPrintPage'
 import { id } from '@/lib/i18n/id'
 
@@ -56,7 +57,7 @@ const protectedRoutes = routeList
     path: route.path.slice(1),
     element: (
       <RoleRouteGuard allowedRoles={route.roles}>
-        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : route.path === '/dasbor' ? <DashboardPage /> : route.path === '/tutup-kasir' ? <CashClosingPage /> : <EmptyRoute />}
+        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : route.path === '/dasbor' ? <DashboardPage /> : route.path === '/tutup-kasir' ? <CashClosingPage /> : route.path === '/menu' ? <MenuAdminPage /> : <EmptyRoute />}
       </RoleRouteGuard>
     ),
   }))

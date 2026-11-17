@@ -1,0 +1,231 @@
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { ImagePlus, Pencil, Trash2, X } from 'lucide-react'
+import { formatSignedRupiah } from '@/lib/format'
+import { id } from '@/lib/i18n/id'
+import type { MenuRecord, MenuSavePayload } from './menu-admin-data'
+import { MenuDialog } from './MenuDialog'
+
+function formatFileSize(bytes: number) {
+  return bytes < 1_048_576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1_048_576).toFixed(1)} MB`
+}
+
+function MenuToggle({
+  checked,
+  label,
+  caption,
+  onChange,
+}: {
+  checked: boolean
+  label: string
+  caption: string
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="menu-editor-toggle">
+      <span className="menu-editor-toggle-copy"><strong>{label}</strong><small>{caption}</small></span>
+      <input type="checkbox" role="switch" checked={checked} onChange={(event) => onChange(event.target.checked)} aria-label={label} />
+      <span className="menu-switch-track" aria-hidden="true"><span /></span>
+    </label>
+  )
+}
+
+export function MenuEditorDialog({
+  menu,
+  categories,
+  canDelete,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  menu: MenuRecord | null
+  categories: string[]
+  canDelete: boolean
+  onClose: () => void
+  onSave: (payload: MenuSavePayload, file: File | null) => Promise<void>
+  onDelete: (menu: MenuRecord) => Promise<void>
+}) {
+  const [name, setName] = useState(menu?.name ?? '')
+  const [category, setCategory] = useState(menu?.category ?? id.menuAdmin.categories.food)
+  const [price, setPrice] = useState(String(menu?.price ?? ''))
+  const [costPrice, setCostPrice] = useState(String(menu?.cost_price ?? ''))
+  const [photo, setPhoto] = useState(menu?.photo ?? null)
+  const [file, setFile] = useState<File | null>(null)
+  const [available, setAvailable] = useState(menu?.available ?? true)
+  const [status, setStatus] = useState(menu?.status ?? true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState('')
+  const [dimensions, setDimensions] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const titleId = 'menu-editor-title'
+  const previewUrl = useMemo(() => file ? URL.createObjectURL(file) : menu?.photoUrl ?? null, [file, menu?.photoUrl])
+  const usedCategories = useMemo(() => [...new Set([
+    ...categories,
+    id.menuAdmin.categories.food,
+    id.menuAdmin.categories.drink,
+    id.menuAdmin.categories.snack,
+  ])], [categories])
+  const parsedPrice = Number(price)
+  const parsedCost = Number(costPrice)
+  const hasNegativeMargin = Number.isSafeInteger(parsedPrice) && Number.isSafeInteger(parsedCost) && parsedPrice < parsedCost
+
+  useEffect(() => () => {
+    if (file && previewUrl) URL.revokeObjectURL(previewUrl)
+  }, [file, previewUrl])
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0] ?? null
+    event.target.value = ''
+    setError('')
+    setDimensions('')
+    if (!selected) return
+    if (selected.type !== 'image/jpeg' && selected.type !== 'image/png') {
+      setError(id.menuAdmin.unsupportedPhoto)
+      return
+    }
+    if (selected.size > 1_048_576) {
+      setError(id.menuAdmin.oversizedPhoto)
+      return
+    }
+    setFile(selected)
+  }
+
+  const handleSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+    const normalizedName = name.trim()
+    const normalizedCategory = category.trim()
+    if (!normalizedName || normalizedName.length > 100) {
+      setError(id.menuAdmin.nameRequired)
+      return
+    }
+    if (!normalizedCategory || normalizedCategory.length > 30) {
+      setError(id.menuAdmin.categoryRequired)
+      return
+    }
+    if (!Number.isSafeInteger(parsedPrice) || parsedPrice < 0 || !Number.isSafeInteger(parsedCost) || parsedCost < 0) {
+      setError(id.menuAdmin.invalidPrice)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await onSave({
+        menu_id: menu?.menu_id ?? null,
+        name: normalizedName,
+        category: normalizedCategory,
+        price: parsedPrice,
+        cost_price: parsedCost,
+        photo,
+        available,
+        status,
+      }, file)
+      onClose()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : id.errors.generic)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!menu || !canDelete) return
+    setError('')
+    setIsDeleting(true)
+    try {
+      await onDelete(menu)
+      onClose()
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : id.errors.generic)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const photoName = file?.name ?? photo?.split('/').pop() ?? ''
+  const photoStatus = file ? id.menuAdmin.photoReady : photo ? id.menuAdmin.photoSaved : id.menuAdmin.photoMissing
+  const canSubmit = !isSaving && !isDeleting
+
+  return (
+    <MenuDialog labelledBy={titleId} className="menu-editor-dialog" onClose={onClose}>
+      <form className="menu-editor-form" onSubmit={(event) => void handleSave(event)}>
+        <header className="menu-dialog-header">
+          <span className="menu-dialog-icon"><Pencil aria-hidden="true" /></span>
+          <div className="menu-dialog-heading-copy">
+            <h2 id={titleId}>{menu ? id.menuAdmin.editTitle : id.menuAdmin.addTitle}</h2>
+            {menu && <span className="menu-dialog-sku">{id.menuAdmin.sku.replace('{code}', menu.code)}</span>}
+          </div>
+          <button type="button" className="menu-dialog-close" onClick={onClose} aria-label={id.menuAdmin.dialogClose}><X aria-hidden="true" /></button>
+        </header>
+
+        <div className="menu-editor-body">
+          <div className="menu-editor-fields">
+            <label className="menu-form-field">
+              <span>{id.menuAdmin.name} <b aria-hidden="true">*</b></span>
+              <input value={name} onChange={(event) => setName(event.target.value)} maxLength={100} required autoFocus aria-invalid={Boolean(error && !name.trim())} />
+              <small>{id.menuAdmin.required}</small>
+            </label>
+            <label className="menu-form-field">
+              <span>{id.menuAdmin.category} <b aria-hidden="true">*</b></span>
+              <input value={category} onChange={(event) => setCategory(event.target.value)} maxLength={30} required list="menu-admin-category-options" aria-invalid={Boolean(error && !category.trim())} />
+              <datalist id="menu-admin-category-options">{usedCategories.map((value) => <option key={value} value={value} />)}</datalist>
+              <small>{id.menuAdmin.maxCategory}</small>
+              <span className="menu-category-recommendations">
+                <strong>{id.menuAdmin.recommendations}</strong>
+                {usedCategories.map((value) => <button type="button" key={value} onClick={() => setCategory(value)}>{value}</button>)}
+              </span>
+            </label>
+          </div>
+
+          <div className="menu-editor-fields">
+            <label className="menu-form-field">
+              <span>{id.menuAdmin.price} <b aria-hidden="true">*</b></span>
+              <span className="menu-money-input"><span>Rp</span><input type="number" inputMode="numeric" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} required aria-label={id.menuAdmin.price} /></span>
+              <small>{id.menuAdmin.priceHint}</small>
+            </label>
+            <label className="menu-form-field">
+              <span>{id.menuAdmin.costPrice} <b aria-hidden="true">*</b></span>
+              <span className="menu-money-input"><span>Rp</span><input type="number" inputMode="numeric" min="0" step="1" value={costPrice} onChange={(event) => setCostPrice(event.target.value)} required aria-label={id.menuAdmin.costPrice} /></span>
+              <small>{id.menuAdmin.costHint}</small>
+            </label>
+          </div>
+
+          {hasNegativeMargin && <p className="menu-negative-margin" role="status">{id.menuAdmin.negativeMargin.replace('{amount}', formatSignedRupiah(parsedPrice - parsedCost))}</p>}
+
+          <fieldset className="menu-photo-fieldset">
+            <legend>{id.menuAdmin.photo}</legend>
+            <div className="menu-photo-row">
+              {previewUrl ? (
+                <img className="menu-photo-preview" src={previewUrl} alt={photoName || id.menuAdmin.photo} onLoad={(event) => setDimensions(`${event.currentTarget.naturalWidth} × ${event.currentTarget.naturalHeight}`)} />
+              ) : <span className="menu-photo-preview menu-photo-preview-empty"><ImagePlus aria-hidden="true" /></span>}
+              <div className="menu-photo-copy">
+                <strong>{photoName || id.menuAdmin.photoMissing}</strong>
+                <small>{file ? formatFileSize(file.size) : photo ? id.menuAdmin.photoSaved : id.menuAdmin.photoTypes}</small>
+                <span className={file ? 'is-ready' : 'is-saved'}>{photoStatus}</span>
+                {dimensions && <small className="menu-photo-dimensions">{id.menuAdmin.photoDimensions.replace('{dimensions}', dimensions)}</small>}
+              </div>
+              <div className="menu-photo-actions">
+                <button type="button" className="menu-photo-change" onClick={() => fileInputRef.current?.click()}>{photo || file ? id.menuAdmin.replacePhoto : id.menuAdmin.choosePhoto}</button>
+                {(photo || file) && <button type="button" className="menu-photo-remove" onClick={() => { setFile(null); setPhoto(null); setDimensions('') }} aria-label={id.menuAdmin.removePhoto}><Trash2 aria-hidden="true" /></button>}
+                <input ref={fileInputRef} className="menu-visually-hidden-file" type="file" accept="image/jpeg,image/png" onChange={handleFileChange} aria-label={id.menuAdmin.selectPhoto} />
+              </div>
+            </div>
+          </fieldset>
+
+          <div className="menu-editor-toggles">
+            <MenuToggle checked={available} label={id.menuAdmin.availableToggle} caption={id.menuAdmin.availableCaption} onChange={setAvailable} />
+            <MenuToggle checked={status} label={id.menuAdmin.activeToggle} caption={id.menuAdmin.activeCaption} onChange={setStatus} />
+          </div>
+
+          {error && <p className="menu-form-error" role="alert">{error}</p>}
+        </div>
+
+        <footer className="menu-dialog-footer">
+          <button type="button" className="menu-secondary-button" onClick={onClose} disabled={!canSubmit}>{id.menuAdmin.cancel}</button>
+          {menu && canDelete && <button type="button" className="menu-delete-button" onClick={() => void handleDelete()} disabled={!canSubmit}><Trash2 aria-hidden="true" />{id.menuAdmin.deleteMenu}</button>}
+          <button type="submit" className="menu-primary-button" disabled={!canSubmit}>{isSaving ? id.menuAdmin.saving : id.menuAdmin.save}</button>
+        </footer>
+      </form>
+    </MenuDialog>
+  )
+}
