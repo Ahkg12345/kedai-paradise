@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, FileSpreadsheet, LockKeyhole, Printer, QrCode, ReceiptText, SlidersHorizontal, WalletCards } from 'lucide-react'
 import { useSession } from '@/app/session-context'
@@ -14,6 +14,7 @@ import {
   fetchAllHistory,
   fetchHistoryDetails,
   fetchHistoryPage,
+  fetchHistoryRow,
   fetchHistorySummary,
   initialHistoryFilters,
   type HistoryDetailItem,
@@ -246,11 +247,13 @@ export function HistoryPage() {
   const queryClient = useQueryClient()
   const role = user?.role ?? 'cashier'
   const isAdmin = role === 'admin'
+  const [searchParams] = useSearchParams()
+  const focusedTransactionId = Number(searchParams.get('transaction'))
   const [draftFilters, setDraftFilters] = useState<HistoryFilters>(() => initialHistoryFilters(role))
   const [filters, setFilters] = useState<HistoryFilters>(() => initialHistoryFilters(role))
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<HistorySort>({ field: 'date', ascending: false })
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [expandedId, setExpandedId] = useState<number | null>(() => focusedTransactionId > 0 ? focusedTransactionId : null)
   const [voidTarget, setVoidTarget] = useState<HistoryRow | null>(null)
   const [notice, setNotice] = useState('')
   const historyQuery = useQuery({
@@ -258,6 +261,12 @@ export function HistoryPage() {
     queryFn: () => fetchHistoryPage({ role, filters, sort, page, pageSize: HISTORY_PAGE_SIZE }),
     enabled: Boolean(user),
     placeholderData: (previous) => previous,
+  })
+  const focusedRowQuery = useQuery({
+    queryKey: ['history-focused-row', focusedTransactionId],
+    queryFn: () => fetchHistoryRow(focusedTransactionId),
+    enabled: isAdmin && Number.isSafeInteger(focusedTransactionId) && focusedTransactionId > 0,
+    staleTime: 30_000,
   })
   const summaryQuery = useQuery({
     queryKey: [...summaryQueryKey, filters],
@@ -268,6 +277,8 @@ export function HistoryPage() {
   const rows = historyQuery.data?.rows ?? []
   const totalCount = historyQuery.data?.count ?? 0
   const totalPages = Math.max(1, Math.ceil(totalCount / HISTORY_PAGE_SIZE))
+  const focusedRow = focusedRowQuery.data ?? null
+  const visibleRows = focusedRow && !rows.some((row) => row.transaction_id === focusedRow.transaction_id) ? [focusedRow, ...rows] : rows
   const summary = summaryQuery.data
   const pageError = historyQuery.isError ? apiError(historyQuery.error, id.history.loadError) : ''
   const datePeriod = `${formatInTimeZone(new Date(`${filters.startDate}T00:00:00+07:00`), 'Asia/Jakarta', 'dd/MM/yyyy')} ${id.history.printDateRangeSeparator} ${formatInTimeZone(new Date(`${filters.endDate}T00:00:00+07:00`), 'Asia/Jakarta', 'dd/MM/yyyy')}`
@@ -322,6 +333,10 @@ export function HistoryPage() {
     ])
   }
 
+  useEffect(() => {
+    if (focusedRow && focusedTransactionId > 0) setExpandedId(focusedTransactionId)
+  }, [focusedRow, focusedTransactionId])
+
   const tableColumns = isAdmin ? 11 : 9
 
   return (
@@ -371,7 +386,7 @@ export function HistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <TransactionRow
                   key={row.transaction_id}
                   row={row}

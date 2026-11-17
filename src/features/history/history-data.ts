@@ -124,6 +124,25 @@ export async function fetchHistoryPage({
   return { rows: rows.map((row) => ({ ...row, user_role: roles.get(row.user_id) })), count: count ?? 0 }
 }
 
+export async function fetchHistoryRow(transactionId: number): Promise<HistoryRow | null> {
+  const { data, error } = await supabase
+    .from('admin_transaction_history')
+    .select('transaction_id,order_no,date,order_date,table_no,method,total,status,completed_at,duration_seconds,total_cost,gross_profit,user_id,username,void_reason,voided_at,voided_by,voided_by_username')
+    .eq('transaction_id', transactionId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+
+  const row = data as unknown as HistoryRow
+  const { data: userData, error: userError } = await supabase
+    .from('admin_user_directory')
+    .select('user_id,role')
+    .eq('user_id', row.user_id)
+    .maybeSingle()
+  if (userError) throw userError
+  return { ...row, user_role: userData?.role as UserRole | undefined }
+}
+
 export async function fetchHistoryDetails(transactionId: number): Promise<HistoryDetails> {
   const { data, error } = await supabase.rpc('get_order_history_details', { p_transaction_id: transactionId })
   if (error) throw error

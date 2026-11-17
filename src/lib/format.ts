@@ -9,6 +9,20 @@ export function formatRupiah(amount: number): string {
   return `Rp${rupiahFormatter.format(safeAmount)}`
 }
 
+export function formatSignedRupiah(amount: number): string {
+  if (!Number.isFinite(amount) || amount === 0) return formatRupiah(0)
+  return `${amount < 0 ? '-' : '+'}${formatRupiah(Math.abs(Math.trunc(amount)))}`
+}
+
+export function currentWibDate(): string {
+  return formatInTimeZone(new Date(), WIB_TIME_ZONE, 'yyyy-MM-dd')
+}
+
+export function formatDateWib(value: Date | number | string): string {
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isFinite(date.getTime()) ? formatInTimeZone(date, WIB_TIME_ZONE, 'dd/MM/yyyy') : '—'
+}
+
 export function formatDateTimeWib(value: Date | number | string, withSeconds = false): string {
   const date = value instanceof Date ? value : new Date(value)
 

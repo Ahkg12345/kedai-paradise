@@ -9,6 +9,9 @@ import { useCheckoutMeta } from '@/features/pos/use-checkout-meta'
 import { ReceiptPage } from '@/features/receipt/ReceiptPage'
 import { QueuePage } from '@/features/queue/QueuePage'
 import { HistoryPage } from '@/features/history/HistoryPage'
+import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { CashClosingPage } from '@/features/cash-closing/CashClosingPage'
+import { ClosingPrintPage } from '@/features/cash-closing/ClosingPrintPage'
 import { id } from '@/lib/i18n/id'
 
 function ProtectedLayout() {
@@ -25,11 +28,13 @@ function ProtectedLayout() {
   }
 
   const isReceiptRoute = location.pathname.startsWith('/struk/')
+  const isClosingPrintRoute = location.pathname.startsWith('/tutup-kasir/cetak/')
+  const isPrintRoute = isReceiptRoute || isClosingPrintRoute
 
   return (
     <>
-      {!isReceiptRoute && <Header user={user} queueCount={checkoutMeta.data?.queue_count ?? 0} />}
-      <main className={isReceiptRoute ? 'receipt-route-content' : 'app-content'} aria-label={id.navigation}>
+      {!isPrintRoute && <Header user={user} queueCount={checkoutMeta.data?.queue_count ?? 0} />}
+      <main className={isPrintRoute ? 'receipt-route-content' : 'app-content'} aria-label={id.navigation}>
         <Outlet />
       </main>
     </>
@@ -51,7 +56,7 @@ const protectedRoutes = routeList
     path: route.path.slice(1),
     element: (
       <RoleRouteGuard allowedRoles={route.roles}>
-        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : <EmptyRoute />}
+        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : route.path === '/dasbor' ? <DashboardPage /> : route.path === '/tutup-kasir' ? <CashClosingPage /> : <EmptyRoute />}
       </RoleRouteGuard>
     ),
   }))
@@ -67,6 +72,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <LandingRoute /> },
       ...protectedRoutes,
+      { path: 'tutup-kasir/cetak/:id', element: <RoleRouteGuard allowedRoles={['admin']}><ClosingPrintPage /></RoleRouteGuard> },
       { path: '*', element: <LandingRoute /> },
     ],
   },
