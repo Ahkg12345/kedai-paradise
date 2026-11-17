@@ -1,6 +1,6 @@
 import { id } from '@/lib/i18n/id'
 
-export function apiError(error: unknown, fallback = id.errors.generic): string {
+export function apiError(error: unknown, fallback: string = id.errors.generic): string {
   if (typeof error === 'string' && error.trim()) {
     return error.trim()
   }

@@ -7,6 +7,8 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { POSPage } from '@/features/pos/POSPage'
 import { useCheckoutMeta } from '@/features/pos/use-checkout-meta'
 import { ReceiptPage } from '@/features/receipt/ReceiptPage'
+import { QueuePage } from '@/features/queue/QueuePage'
+import { HistoryPage } from '@/features/history/HistoryPage'
 import { id } from '@/lib/i18n/id'
 
 function ProtectedLayout() {
@@ -49,7 +51,7 @@ const protectedRoutes = routeList
     path: route.path.slice(1),
     element: (
       <RoleRouteGuard allowedRoles={route.roles}>
-        {route.path === '/kasir' ? <POSPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : <EmptyRoute />}
+        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : <EmptyRoute />}
       </RoleRouteGuard>
     ),
   }))
