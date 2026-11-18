@@ -13,6 +13,8 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { CashClosingPage } from '@/features/cash-closing/CashClosingPage'
 import { MenuAdminPage } from '@/features/menu-admin/MenuAdminPage'
 import { FinancePage } from '@/features/finance/FinancePage'
+import { ReportsPage } from '@/features/reports/ReportsPage'
+import { MenuPerformancePage } from '@/features/menu-performance/MenuPerformancePage'
 import { ClosingPrintPage } from '@/features/cash-closing/ClosingPrintPage'
 import { id } from '@/lib/i18n/id'
 
@@ -58,7 +60,7 @@ const protectedRoutes = routeList
     path: route.path.slice(1),
     element: (
       <RoleRouteGuard allowedRoles={route.roles}>
-        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : route.path === '/dasbor' ? <DashboardPage /> : route.path === '/tutup-kasir' ? <CashClosingPage /> : route.path === '/menu' ? <MenuAdminPage /> : route.path === '/keuangan' ? <FinancePage /> : <EmptyRoute />}
+        {route.path === '/kasir' ? <POSPage /> : route.path === '/antrian' ? <QueuePage /> : route.path === '/riwayat' ? <HistoryPage /> : route.path === '/struk/:id' ? <ReceiptPage /> : route.path === '/dasbor' ? <DashboardPage /> : route.path === '/tutup-kasir' ? <CashClosingPage /> : route.path === '/menu' ? <MenuAdminPage /> : route.path === '/keuangan' ? <FinancePage /> : route.path === '/laporan' ? <ReportsPage /> : route.path === '/performa-menu' ? <MenuPerformancePage /> : <EmptyRoute />}
       </RoleRouteGuard>
     ),
   }))
