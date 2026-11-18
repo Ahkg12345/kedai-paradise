@@ -9,6 +9,36 @@ export function formatRupiah(amount: number): string {
   return `Rp${rupiahFormatter.format(safeAmount)}`
 }
 
+export function formatRupiahInput(value: string, caretPosition = value.length) {
+  const digits = value.replace(/\D/g, '')
+  const amount = Number(digits)
+  const formattedValue = digits && Number.isSafeInteger(amount) ? rupiahFormatter.format(amount) : digits
+  const digitsBeforeCaret = value.slice(0, caretPosition).replace(/\D/g, '').length
+  if (digitsBeforeCaret === 0) return { value: formattedValue, caretPosition: 0 }
+
+  let formattedCaretPosition = 0
+  let digitsSeen = 0
+
+  for (let index = 0; index < formattedValue.length; index += 1) {
+    if (/\d/.test(formattedValue[index])) digitsSeen += 1
+    formattedCaretPosition = index + 1
+    if (digitsSeen >= digitsBeforeCaret && digitsBeforeCaret > 0) break
+  }
+
+  return { value: formattedValue, caretPosition: formattedCaretPosition }
+}
+
+export function parseRupiahInput(value: string): number | null {
+  const digits = value.replace(/\./g, '')
+  if (!/^\d+$/.test(digits)) return null
+  const amount = Number(digits)
+  return Number.isSafeInteger(amount) ? amount : null
+}
+
+export function formatPercent(value: number): string {
+  return `${(Number.isFinite(value) ? value : 0).toFixed(1)}%`
+}
+
 export function formatSignedRupiah(amount: number): string {
   if (!Number.isFinite(amount) || amount === 0) return formatRupiah(0)
   return `${amount < 0 ? '-' : '+'}${formatRupiah(Math.abs(Math.trunc(amount)))}`

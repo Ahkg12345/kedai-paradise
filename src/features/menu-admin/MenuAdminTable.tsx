@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Coffee, Cookie, Droplet, ImageOff, Settings2, Utensils } from 'lucide-react'
-import { formatRupiah, formatSignedRupiah } from '@/lib/format'
+import { formatPercent, formatRupiah, formatSignedRupiah } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import type { MenuRecord } from './menu-admin-data'
 
@@ -8,10 +8,6 @@ function CategoryIcon({ category }: { category: string }) {
   if (category === id.menuAdmin.categories.drink) return <Coffee aria-hidden="true" />
   if (category === id.menuAdmin.categories.snack) return <Cookie aria-hidden="true" />
   return <Droplet aria-hidden="true" />
-}
-
-function formatPercent(value: number) {
-  return `${value.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 }
 
 function MenuPhoto({ item }: { item: MenuRecord }) {

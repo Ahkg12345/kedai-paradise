@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChartPie, CircleAlert, Plus, Search, ShoppingCart, SlidersHorizontal, Utensils, X } from 'lucide-react'
 import { useSession } from '@/app/session-context'
 import { apiError } from '@/lib/api-error'
+import { formatPercent } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import { supabase } from '@/lib/supabase/client'
 import { MenuAdminTable } from './MenuAdminTable'
@@ -175,8 +176,8 @@ export function MenuAdminPage() {
       </header>
 
       <section className="menu-kpi-grid" aria-label={id.menuAdmin.title} aria-busy={summaryQuery.isPending}>
-        <KpiCard label={id.menuAdmin.activeMenu} value={String(summary?.total_active ?? 0)} detail={id.menuAdmin.catalogShare.replace('{percent}', `${catalogShare.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`)} tone="mint" icon={<Utensils aria-hidden="true" />} />
-        <KpiCard label={id.menuAdmin.averageMargin} value={`${(summary?.avg_margin_pct ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`} tone="peach" icon={<ChartPie aria-hidden="true" />} />
+        <KpiCard label={id.menuAdmin.activeMenu} value={String(summary?.total_active ?? 0)} detail={id.menuAdmin.catalogShare.replace('{percent}', catalogShare.toFixed(1))} tone="mint" icon={<Utensils aria-hidden="true" />} />
+        <KpiCard label={id.menuAdmin.averageMargin} value={formatPercent(summary?.avg_margin_pct ?? 0)} tone="peach" icon={<ChartPie aria-hidden="true" />} />
         <KpiCard label={id.menuAdmin.criticalStock} value={String(summary?.critical_count ?? 0)} detail={id.menuAdmin.stockHint} tone="red" icon={<ShoppingCart aria-hidden="true" />} />
         <KpiCard label={id.menuAdmin.menuWithVariants} value={String(summary?.variant_count ?? 0)} detail={id.menuAdmin.variantsHint} tone="neutral" icon={<SlidersHorizontal aria-hidden="true" />} />
       </section>

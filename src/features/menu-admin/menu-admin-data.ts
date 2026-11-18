@@ -23,6 +23,7 @@ export type MenuModifierItem = {
 export type MenuModifierGroup = {
   group_id: number
   menu_id: number
+  sort_order: number
   name: string
   type: 'single' | 'multiple'
   is_required: boolean
@@ -37,6 +38,7 @@ export type MenuRecord = {
   price: number
   cost_price: number
   photo: string | null
+  photo_size: number | null
   photoUrl: string | null
   available: boolean
   status: boolean
@@ -122,7 +124,7 @@ export async function fetchMenuAdminSummary(): Promise<MenuAdminSummary> {
 export async function fetchMenuAdminPage(filters: MenuPageFilters): Promise<MenuPage> {
   let menuQuery = supabase
     .from('admin_menu_records')
-    .select('menu_id, code, name, category, price, cost_price, photo, available, status', { count: 'exact' })
+    .select('menu_id, code, name, category, price, cost_price, photo, photo_size, available, status', { count: 'exact' })
 
   if (!filters.showInactive) menuQuery = menuQuery.eq('status', true)
   if (filters.category) menuQuery = menuQuery.eq('category', filters.category)
@@ -135,15 +137,16 @@ export async function fetchMenuAdminPage(filters: MenuPageFilters): Promise<Menu
 
   if (menuError) throw menuError
 
-  const menuRows = (menuData ?? []) as unknown as Omit<MenuRecord, 'photoUrl' | 'groups'>[]
+  const menuRows = (menuData ?? []) as unknown as Array<Omit<MenuRecord, 'photoUrl' | 'groups'> & { photo_size: number | string | null }>
   const menuIds = menuRows.map((item) => item.menu_id)
   if (menuIds.length === 0) return { rows: [], count: count ?? 0 }
 
   const { data: groupData, error: groupError } = await supabase
     .from('admin_modifier_groups')
-    .select('group_id, menu_id, name, type, is_required')
+    .select('group_id, menu_id, name, type, is_required, sort_order')
     .in('menu_id', menuIds)
-    .order('group_id', { ascending: true })
+    .order('menu_id', { ascending: true })
+    .order('sort_order', { ascending: true })
   if (groupError) throw groupError
 
   const groups = (groupData ?? []) as unknown as Omit<MenuModifierGroup, 'items'>[]
@@ -176,6 +179,7 @@ export async function fetchMenuAdminPage(filters: MenuPageFilters): Promise<Menu
 
     return {
       ...item,
+      photo_size: item.photo_size == null ? null : asNumber(item.photo_size),
       photoUrl,
       groups: groupsByMenu.get(item.menu_id) ?? [],
     }

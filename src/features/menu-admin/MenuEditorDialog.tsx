@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ImagePlus, Pencil, Trash2, X } from 'lucide-react'
-import { formatSignedRupiah } from '@/lib/format'
+import { formatRupiahInput, formatSignedRupiah, parseRupiahInput } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import type { MenuRecord, MenuSavePayload } from './menu-admin-data'
 import { MenuConfirmDialog } from './MenuConfirmDialog'
 import { MenuDialog } from './MenuDialog'
+import { MenuMoneyInput } from './MenuMoneyInput'
 
 function formatFileSize(bytes: number) {
   return bytes < 1_048_576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1_048_576).toFixed(1)} MB`
+}
+
+function getReadablePhotoName(menuName: string, path: string) {
+  const extension = path.split('.').pop()?.match(/^[a-z0-9]{1,5}$/i)?.[0]
+  return extension ? `${menuName}.${extension}` : menuName
 }
 
 function MenuToggle({
@@ -47,8 +53,8 @@ export function MenuEditorDialog({
 }) {
   const [name, setName] = useState(menu?.name ?? '')
   const [category, setCategory] = useState(menu?.category ?? id.menuAdmin.categories.food)
-  const [price, setPrice] = useState(String(menu?.price ?? ''))
-  const [costPrice, setCostPrice] = useState(String(menu?.cost_price ?? ''))
+  const [price, setPrice] = useState(() => formatRupiahInput(String(menu?.price ?? '')).value)
+  const [costPrice, setCostPrice] = useState(() => formatRupiahInput(String(menu?.cost_price ?? '')).value)
   const [photo, setPhoto] = useState(menu?.photo ?? null)
   const [file, setFile] = useState<File | null>(null)
   const [available, setAvailable] = useState(menu?.available ?? true)
@@ -67,9 +73,9 @@ export function MenuEditorDialog({
     id.menuAdmin.categories.drink,
     id.menuAdmin.categories.snack,
   ])], [categories])
-  const parsedPrice = Number(price)
-  const parsedCost = Number(costPrice)
-  const hasNegativeMargin = Number.isSafeInteger(parsedPrice) && Number.isSafeInteger(parsedCost) && parsedPrice < parsedCost
+  const parsedPrice = parseRupiahInput(price)
+  const parsedCost = parseRupiahInput(costPrice)
+  const hasNegativeMargin = parsedPrice !== null && parsedCost !== null && parsedPrice < parsedCost
 
   useEffect(() => () => {
     if (file && previewUrl) URL.revokeObjectURL(previewUrl)
@@ -105,7 +111,7 @@ export function MenuEditorDialog({
       setError(id.menuAdmin.categoryRequired)
       return
     }
-    if (!Number.isSafeInteger(parsedPrice) || parsedPrice < 0 || !Number.isSafeInteger(parsedCost) || parsedCost < 0) {
+    if (parsedPrice === null || parsedCost === null) {
       setError(id.menuAdmin.invalidPrice)
       return
     }
@@ -130,7 +136,8 @@ export function MenuEditorDialog({
     }
   }
 
-  const photoName = file?.name ?? photo?.split('/').pop() ?? ''
+  const photoName = file?.name ?? (photo && menu ? getReadablePhotoName(menu.name, photo) : '')
+  const photoSize = file?.size ?? menu?.photo_size ?? null
   const photoStatus = file ? id.menuAdmin.photoReady : photo ? id.menuAdmin.photoSaved : id.menuAdmin.photoMissing
   const canSubmit = !isSaving
 
@@ -169,12 +176,12 @@ export function MenuEditorDialog({
           <div className="menu-editor-fields">
             <label className="menu-form-field">
               <span>{id.menuAdmin.price} <b aria-hidden="true">*</b></span>
-              <span className="menu-money-input"><span>Rp</span><input type="number" inputMode="numeric" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} required aria-label={id.menuAdmin.price} /></span>
+              <MenuMoneyInput value={price} onChange={setPrice} label={id.menuAdmin.price} />
               <small>{id.menuAdmin.priceHint}</small>
             </label>
             <label className="menu-form-field">
               <span>{id.menuAdmin.costPrice} <b aria-hidden="true">*</b></span>
-              <span className="menu-money-input"><span>Rp</span><input type="number" inputMode="numeric" min="0" step="1" value={costPrice} onChange={(event) => setCostPrice(event.target.value)} required aria-label={id.menuAdmin.costPrice} /></span>
+              <MenuMoneyInput value={costPrice} onChange={setCostPrice} label={id.menuAdmin.costPrice} />
               <small>{id.menuAdmin.costHint}</small>
             </label>
           </div>
@@ -188,9 +195,9 @@ export function MenuEditorDialog({
                 <img className="menu-photo-preview" src={previewUrl} alt={photoName || id.menuAdmin.photo} onLoad={(event) => setDimensions(`${event.currentTarget.naturalWidth} × ${event.currentTarget.naturalHeight}`)} />
               ) : <span className="menu-photo-preview menu-photo-preview-empty"><ImagePlus aria-hidden="true" /></span>}
               <div className="menu-photo-copy">
-                <strong>{photoName || id.menuAdmin.photoMissing}</strong>
-                <small>{file ? formatFileSize(file.size) : photo ? id.menuAdmin.photoSaved : id.menuAdmin.photoTypes}</small>
-                <span className={file ? 'is-ready' : 'is-saved'}>{photoStatus}</span>
+                {photoName && <strong>{photoName}</strong>}
+                {photoSize !== null && <small>{formatFileSize(photoSize)}</small>}
+                <span className={file ? 'is-ready' : photo ? 'is-saved' : ''}>{photoStatus}</span>
                 {dimensions && <small className="menu-photo-dimensions">{id.menuAdmin.photoDimensions.replace('{dimensions}', dimensions)}</small>}
               </div>
               <div className="menu-photo-actions">

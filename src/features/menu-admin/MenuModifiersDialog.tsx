@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { formatRupiah } from '@/lib/format'
+import { formatRupiah, formatRupiahInput, parseRupiahInput } from '@/lib/format'
 import { id } from '@/lib/i18n/id'
 import type { MenuModifierGroup, MenuModifierPayload } from './menu-admin-data'
 import { MenuConfirmDialog } from './MenuConfirmDialog'
 import { MenuDialog } from './MenuDialog'
+import { MenuMoneyInput } from './MenuMoneyInput'
 
 type ModifierItemDraft = {
   id?: number
@@ -31,17 +32,11 @@ function makeDrafts(groups: MenuModifierGroup[]): ModifierGroupDraft[] {
     items: group.items.map((item) => ({
       id: item.modifier_id,
       name: item.name,
-      extra_price: String(item.extra_price),
-      extra_cost: String(item.extra_cost),
+      extra_price: formatRupiahInput(String(item.extra_price)).value,
+      extra_cost: formatRupiahInput(String(item.extra_cost)).value,
       available: item.available,
     })),
   }))
-}
-
-function parseWholeRupiah(value: string) {
-  if (!/^\d+$/.test(value)) return null
-  const parsed = Number(value)
-  return Number.isSafeInteger(parsed) ? parsed : null
 }
 
 export function MenuModifiersDialog({
@@ -116,7 +111,7 @@ export function MenuModifiersDialog({
           setError(id.menuAdmin.itemNameRequired)
           return null
         }
-        if (parseWholeRupiah(item.extra_price) === null || parseWholeRupiah(item.extra_cost) === null) {
+        if (parseRupiahInput(item.extra_price) === null || parseRupiahInput(item.extra_cost) === null) {
           setError(id.menuAdmin.invalidModifierPrice)
           return null
         }
@@ -131,8 +126,8 @@ export function MenuModifiersDialog({
       items: group.items.map((item) => ({
         ...(item.id ? { id: item.id } : {}),
         name: item.name.trim(),
-        extra_price: parseWholeRupiah(item.extra_price) ?? 0,
-        extra_cost: parseWholeRupiah(item.extra_cost) ?? 0,
+        extra_price: parseRupiahInput(item.extra_price) ?? 0,
+        extra_cost: parseRupiahInput(item.extra_cost) ?? 0,
         available: item.available,
       })),
     }))
@@ -216,8 +211,8 @@ export function MenuModifiersDialog({
                     {group.items.map((item, itemIndex) => (
                       <tr key={item.id ?? `new-${itemIndex}`}>
                         <td><input aria-label={id.menuAdmin.itemName} value={item.name} onChange={(event) => updateItem(groupIndex, itemIndex, { name: event.target.value })} maxLength={50} required /></td>
-                        <td><span className="menu-money-input"><span>Rp</span><input type="number" aria-label={`${id.menuAdmin.extraPrice} ${item.name}`} min="0" step="1" inputMode="numeric" value={item.extra_price} onChange={(event) => updateItem(groupIndex, itemIndex, { extra_price: event.target.value })} required /></span></td>
-                        <td><span className="menu-money-input"><span>Rp</span><input type="number" aria-label={`${id.menuAdmin.extraCost} ${item.name}`} min="0" step="1" inputMode="numeric" value={item.extra_cost} onChange={(event) => updateItem(groupIndex, itemIndex, { extra_cost: event.target.value })} required /></span></td>
+                        <td><MenuMoneyInput label={`${id.menuAdmin.extraPrice} ${item.name}`} value={item.extra_price} onChange={(value) => updateItem(groupIndex, itemIndex, { extra_price: value })} /></td>
+                        <td><MenuMoneyInput label={`${id.menuAdmin.extraCost} ${item.name}`} value={item.extra_cost} onChange={(value) => updateItem(groupIndex, itemIndex, { extra_cost: value })} /></td>
                         <td>
                           <label className={`menu-switch-label menu-modifier-switch${item.available ? ' is-available' : ' is-unavailable'}`}>
                             <input type="checkbox" role="switch" checked={item.available} onChange={(event) => updateItem(groupIndex, itemIndex, { available: event.target.checked })} aria-label={`${id.menuAdmin.itemAvailability}: ${item.name || id.menuAdmin.itemName}`} />
