@@ -4,7 +4,7 @@ import { useSession } from '@/app/session-context'
 import { apiError } from '@/lib/api-error'
 import { id } from '@/lib/i18n/id'
 import { changeOwnPassword } from './account-data'
-import './phase9.css'
+import '../users/phase9.css'
 import './account.css'
 
 type PasswordField = 'current' | 'next' | 'confirm'

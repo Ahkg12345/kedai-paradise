@@ -4,7 +4,7 @@ import { Banknote, Check, CircleAlert, Coins, ImagePlus, Info, Landmark, Percent
 import { apiError } from '@/lib/api-error'
 import { id } from '@/lib/i18n/id'
 import { fetchAdminSettings, saveAdminSettings, validateSettingsForm, type AdminSettings, type SettingsFormValues } from './settings-data'
-import './phase9.css'
+import '../users/phase9.css'
 import './settings.css'
 
 const settingsQueryKey = ['admin-settings'] as const
